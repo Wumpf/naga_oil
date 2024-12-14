@@ -17,7 +17,11 @@ prune = []
 allow_deprecated = []
 
 [dependencies]
-naga = { version = "23", features = ["wgsl-in", "wgsl-out"] }
+#naga = { version = "23", features = ["wgsl-in", "wgsl-out"] }
+naga = { git = "https://github.com/gfx-rs/wgpu", branch = "trunk", features = [
+    "wgsl-in",
+    "wgsl-out",
+] }
 tracing = "0.1"
 regex = "1.8"
 regex-syntax = "0.8"
