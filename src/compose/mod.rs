@@ -576,7 +576,7 @@ impl Composer {
     fn create_module_ir(
         &self,
         name: &str,
-        source: String,
+        mut source: String,
         language: ShaderLanguage,
         imports: &[ImportDefinition],
         shader_defs: &HashMap<String, ShaderDefValue>,
@@ -634,7 +634,7 @@ impl Composer {
             }
         }
 
-        let composed_header = self
+        let mut composed_header = self
             .naga_to_string(&mut header_module.into(), language, name)
             .map_err(|inner| ComposerError {
                 inner,
@@ -644,6 +644,26 @@ impl Composer {
                     defs: shader_defs.clone(),
                 },
             })?;
+
+        // -----------------
+        // @wumpf HACK:
+        // re-insert all global directives into the header. They have to be at the top, we then comment them out in the main source.
+
+        // This bit is wrong because it won't handle any errors in those directives correctly.
+        for directive_line in source
+            .lines()
+            .filter(|line| line.starts_with("enable") || line.starts_with("diagnostic"))
+            .map(|line| line.to_owned())
+        {
+            composed_header = format!("{directive_line}\n{composed_header}");
+        }
+
+        // This bit is extra wrong because it can replace things that aren't global directives.
+        source = source.replace("enable", "// enable");
+        source = source.replace("diagnostic", "// diagnostic");
+
+        // -----------------
+
         module_string.push_str(&composed_header);
 
         let start_offset = module_string.len();
@@ -657,6 +677,7 @@ impl Composer {
             start_offset,
             module_string.len()
         );
+
         let module = match language {
             ShaderLanguage::Wgsl => naga::front::wgsl::parse_str(&module_string).map_err(|e| {
                 debug!("full err'd source file: \n---\n{}\n---", module_string);
