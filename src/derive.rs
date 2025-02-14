@@ -407,6 +407,7 @@ impl<'a> DerivedModule<'a> {
                                 }
                             }
                             naga::RayQueryFunction::Terminate => naga::RayQueryFunction::Terminate,
+                            _ => panic!("don't care"),
                         },
                     },
                     Statement::SubgroupBallot { result, predicate } => Statement::SubgroupBallot {
